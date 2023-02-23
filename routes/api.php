@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\FileNodeController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\PromptController;
 
@@ -21,6 +22,7 @@ Route::controller(ProjectController::class)->group(function () {
     Route::put('project/{id}', 'update');
     Route::delete('project/{id}', 'destroy');
     Route::get('project/{id}/prompts', 'get_prompts');
+    Route::get('project/{id}/files', 'get_files');
 });
 
 
@@ -30,4 +32,11 @@ Route::controller(PromptController::class)->group(function () {
     Route::get('project/{id}', 'load');
     Route::put('prompt/{id}', 'update');
     Route::delete('prompt/{id}', 'destroy');
+});
+
+Route::controller(FileNodeController::class)->group(function () {
+    // only need to get via project
+    Route::post('file', 'create');
+    Route::put('file/{id}', 'update');
+    Route::delete('file/{id}', 'destroy');
 });

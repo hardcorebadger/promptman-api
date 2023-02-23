@@ -77,6 +77,12 @@ class PromptController extends Controller
         ]);
 
         $prompt = Prompt::find($id);
+        if ($prompt == null) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Prompt not found',
+            ], 404);
+        }
 
         if ($prompt->user_id != Auth::user()->id) {
             return response()->json([
@@ -103,6 +109,13 @@ class PromptController extends Controller
     public function destroy($id)
     {
         $prompt = Prompt::find($id);
+        if ($prompt == null) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Prompt not found',
+            ], 404);
+        }
+        
         if ($prompt->user_id != Auth::user()->id) {
             return response()->json([
                 'status' => 'error',
