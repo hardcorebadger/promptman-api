@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Project;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -29,8 +30,10 @@ class AuthController extends Controller
                 'message' => 'Unauthorized',
             ], 401);
         }
-
+        
         $user = Auth::user();
+        $project = Project::where('user_id', Auth::user()->id)->first();
+        $user->project = $project;
         return response()->json([
                 'status' => 'success',
                 'user' => $user,
@@ -52,7 +55,13 @@ class AuthController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
+        $project = Project::create([
+            'name' => 'Default Project',
+            'user_id' => $user->id,
+        ]);
+
         $token = Auth::login($user);
+        $user->project = $project;
         return response()->json([
             'status' => 'success',
             'message' => 'User created successfully',
@@ -72,18 +81,24 @@ class AuthController extends Controller
 
     public function refresh()
     {
+        $project = Project::where('user_id', Auth::user()->id)->first();
+        $user = Auth::user();
+        $user->project = $project;
         return response()->json([
             'status' => 'success',
-            'user' => Auth::user(),
+            'user' => $user,
             'access_token' => Auth::refresh()
         ]);
     }
 
     public function me()
     {
+        $project = Project::where('user_id', Auth::user()->id)->first();
+        $user = Auth::user();
+        $user->project = $project;
         return response()->json([
             'status' => 'success',
-            'user' => Auth::user(),
+            'user' => Auth::user()
         ]);
     }
 
