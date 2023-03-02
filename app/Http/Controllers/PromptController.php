@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\FileNode;
 use Illuminate\Http\Request;
 use App\Models\Prompt;
 use App\Models\Project;
 use Illuminate\Support\Facades\Auth;
+use Orhanerday\OpenAi\OpenAi;
 
 class PromptController extends Controller
 {
@@ -62,6 +64,10 @@ class PromptController extends Controller
             ], 401);
         }
 
+        $file = FileNode::where('content_id', $prompt->id)->where('type', 'prompt')->first();
+        $prompt->name = $file->name;
+        $prompt->file_id = $file->id;
+
         return response()->json([
             'status' => 'success',
             'prompt' => $prompt,
@@ -115,7 +121,7 @@ class PromptController extends Controller
                 'message' => 'Prompt not found',
             ], 404);
         }
-        
+
         if ($prompt->user_id != Auth::user()->id) {
             return response()->json([
                 'status' => 'error',
@@ -128,6 +134,70 @@ class PromptController extends Controller
         return response()->json([
             'status' => 'success',
             'project' => $prompt,
+        ]);
+    }
+
+    public function run(Request $request, $id)
+    {
+        $request->validate([
+            'name' => 'max:255|nullable',
+            'payload' => 'nullable',
+            'settings' => 'array|nullable',
+        ]);
+
+        $prompt = Prompt::find($id);
+        if ($prompt == null) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Prompt not found',
+            ], 404);
+        }
+
+        if ($prompt->user_id != Auth::user()->id) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Unauthorized',
+            ], 401);
+        }
+
+        if ($request->has('name'))
+            $prompt->name = $request->name;
+        if ($request->has('payload'))
+            $prompt->payload = $request->payload;
+        if ($request->has('settings'))
+            $prompt->settings = $request->settings;
+
+        $prompt->save();
+
+        $settings = $prompt->settings;
+
+        // run GPT3 prompt
+        $open_ai_key = getenv('OPENAI_API_KEY');
+        $open_ai = new OpenAi($open_ai_key);
+
+        $complete = $open_ai->completion([
+            'model' => $settings['model'],
+            'prompt' => $prompt->payload,
+            'temperature' => $settings['tempurature'],
+            'max_tokens' => $settings['max_tokens'],
+            'frequency_penalty' => $settings['frequency_penalty'],
+            'presence_penalty' => $settings['presence_penalty'],
+        ]);
+
+        $c = json_decode($complete);
+
+        if (isset($c->error)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $c->error->message,
+                'prompt' => $prompt,
+            ], 500);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'prompt' => $prompt,
+            'completion' => $c,
         ]);
     }
 }

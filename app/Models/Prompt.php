@@ -23,7 +23,7 @@ class Prompt extends Model
 
     protected $attributes = [
         'payload' => '',
-        'settings' => '{"tempurature":0.5}',
+        'settings' => '{"model":"text-davinci-003","tempurature":0.5,"max_tokens":150,"frequency_penalty":0,"presence_penalty":0.6}',
     ];
 
     public function user() {

@@ -29,8 +29,9 @@ Route::controller(ProjectController::class)->group(function () {
 Route::controller(PromptController::class)->group(function () {
     Route::get('prompts', 'index');
     Route::post('prompt', 'create');
-    Route::get('project/{id}', 'load');
+    Route::get('prompt/{id}', 'load');
     Route::put('prompt/{id}', 'update');
+    Route::put('prompt/{id}/run', 'run');
     Route::delete('prompt/{id}', 'destroy');
 });
 
