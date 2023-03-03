@@ -184,6 +184,14 @@ class PromptController extends Controller
             'presence_penalty' => $settings['presence_penalty'],
         ]);
 
+        if ($complete == null || json_decode(($complete)) == null) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Completion failed. Unknown error. Please run again.',
+                'prompt' => $prompt,
+            ], 500);
+        }
+
         $c = json_decode($complete);
 
         if (isset($c->error)) {
