@@ -172,8 +172,9 @@ class PromptController extends Controller
         $settings = $prompt->settings;
 
         // run GPT3 prompt
-        $open_ai_key = getenv('OPENAI_API_KEY');
-        $open_ai = new OpenAi($open_ai_key);
+        $project = Project::find($prompt->project_id);
+        // $open_ai_key = getenv('OPENAI_API_KEY');
+        $open_ai = new OpenAi($project->openai_api_key);
 
         $complete = $open_ai->completion([
             'model' => $settings['model'],
