@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
+use Orhanerday\OpenAi\OpenAi;
+
 
 class AuthController extends Controller
 {
@@ -34,6 +36,8 @@ class AuthController extends Controller
         $user = Auth::user();
         $project = Project::where('user_id', Auth::user()->id)->first();
         $user->project = $project;
+        $user->api_validation = self::validate_api($project->openai_api_key);
+
         return response()->json([
                 'status' => 'success',
                 'user' => $user,
@@ -62,6 +66,8 @@ class AuthController extends Controller
 
         $token = Auth::login($user);
         $user->project = $project;
+        $user->api_validation = self::validate_api($project->openai_api_key);
+
         return response()->json([
             'status' => 'success',
             'message' => 'User created successfully',
@@ -84,6 +90,8 @@ class AuthController extends Controller
         $project = Project::where('user_id', Auth::user()->id)->first();
         $user = Auth::user();
         $user->project = $project;
+        $user->api_validation = self::validate_api($project->openai_api_key);
+
         return response()->json([
             'status' => 'success',
             'user' => $user,
@@ -96,10 +104,35 @@ class AuthController extends Controller
         $project = Project::where('user_id', Auth::user()->id)->first();
         $user = Auth::user();
         $user->project = $project;
+        $user->api_validation = self::validate_api($project->openai_api_key);
+
         return response()->json([
             'status' => 'success',
             'user' => Auth::user()
         ]);
+    }
+
+    private function validate_api($openai_api_key) {
+        $api_validation = false;
+
+        //validate openai api key
+        if ($openai_api_key != null) {
+            $open_ai = new OpenAi($openai_api_key);
+            $response = $open_ai->listModels();
+            if ($response == null || json_decode(($response)) == null) {
+                $api_validation = false;
+            }
+    
+            $c = json_decode($response);
+    
+            if (isset($c->error)) {
+                $api_validation = false;
+            } else {
+                $api_validation = true;
+            }
+        }
+
+        return $api_validation;
     }
 
 }

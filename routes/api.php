@@ -20,6 +20,7 @@ Route::controller(ProjectController::class)->group(function () {
     Route::post('project', 'create');
     Route::get('project/{id}', 'load');
     Route::put('project/{id}', 'update');
+    Route::put('project/{id}/api_key', 'set_api_key');
     Route::delete('project/{id}', 'destroy');
     Route::get('project/{id}/prompts', 'get_prompts');
     Route::get('project/{id}/files', 'get_files');
