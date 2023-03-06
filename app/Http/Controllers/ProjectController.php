@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use App\Models\Project;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Prompt;
+use Orhanerday\OpenAi\OpenAi;
+
 
 class ProjectController extends Controller
 {
@@ -161,5 +163,62 @@ class ProjectController extends Controller
             'files' => $files,
         ]);
     }
+
+    public function set_api_key(Request $request, $id)
+    {
+        $request->validate([
+            'openai_api_key' => 'required|string',
+        ]);
+
+        $project = Project::find($id);
+        if ($project == null) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Project not found',
+            ], 404);
+        }
+        if ($project->user_id != Auth::user()->id) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Unauthorized',
+            ], 401);
+        }
+
+        $api_validation = false;
+
+        //validate openai api key
+        $open_ai = new OpenAi($request->openai_api_key);
+        $response = $open_ai->listModels();
+        if ($response == null || json_decode(($response)) == null) {
+            $api_validation = false;
+        }
+
+        $c = json_decode($response);
+
+        if (isset($c->error)) {
+            $api_validation = false;
+            
+        } else {
+            $api_validation = true;
+        }
+
+        if ($api_validation) {
+
+            $project->openai_api_key = $request->openai_api_key;
+            $project->save();
+
+            return response()->json([
+                'status' => 'success',
+                'project' => $project,
+            ]);
+        } else {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Invalid OpenAI API Key',
+            ], 410);
+        }
     
+    }
+    
+
 }

@@ -11,7 +11,8 @@ class Project extends Model
 
     protected $fillable = [
         'name',
-        'user_id'
+        'user_id',
+        'openai_api_key'
     ];
 
     public function user() {
