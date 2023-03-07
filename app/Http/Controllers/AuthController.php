@@ -15,7 +15,7 @@ class AuthController extends Controller
 
     public function __construct()
     {
-        $this->middleware('auth:api', ['except' => ['login','register']]);
+        $this->middleware('auth:api', ['except' => ['login','register', 'google']]);
     }
 
     public function login(Request $request)
@@ -110,6 +110,56 @@ class AuthController extends Controller
             'status' => 'success',
             'user' => Auth::user()
         ]);
+    }
+
+    public function google(Request $request){
+        $request->validate([
+            'credential' => 'required|string',
+        ]);
+
+        $google_client = new \Google_Client(['client_id' => '697167343567-53l16s3kutef8slm3qts1ip4cbvsf84u.apps.googleusercontent.com']);
+        $payload = $google_client->verifyIdToken($request->credential);
+
+        if (!$payload) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Unauthorized. Invalid Google Token.',
+            ], 401);
+        }
+
+        $user = User::where('email', $payload['email'])->where('password', null)->first();
+        if ($user == null) {
+            $passAuth = User::where('email', $payload['email'])->first();
+            if ($passAuth) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Unauthorized. Login via email and password.',
+                ], 401);
+            }
+            $user = User::create([
+                'name' => $payload['name'],
+                'email' => $payload['email'],
+                'password' => null,
+            ]);
+    
+            Project::create([
+                'name' => 'Default Project',
+                'user_id' => $user->id,
+            ]);
+        }
+
+        $token = Auth::login($user);
+
+        $project = Project::where('user_id', $user->id)->first();
+        $user->project = $project;
+        $user->api_validation = self::validate_api($project->openai_api_key);
+
+        return response()->json([
+            'status' => 'success',
+            'user' => $user,
+            'access_token' => $token
+        ]);
+
     }
 
     private function validate_api($openai_api_key) {
